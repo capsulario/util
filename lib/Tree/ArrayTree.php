@@ -139,7 +139,15 @@ class ArrayTree implements Tree {
         $offset = $this->extractKey($offset);
 
         return $this->find($this->data, array_shift($offset), $this->srcPath, $offset, function (&$value, array $path) {
-            return is_array($value) ? static::fromArrayByReference($value, $path) : $value;
+            if (is_array($value)) {
+                return static::fromArrayByReference($value, $path);
+            } else {
+                //TODO: This is example of check which we can add here for safety, it will limit names of parameter which can be used. Need to discus
+                //if (function_exists($value)) {
+                //    throw new \Exception('Restricted invoke of real function by similar property name');
+                //}
+             return $value;
+            }
         }, function () use ($default) {
             return $default;
         });
@@ -156,6 +164,11 @@ class ArrayTree implements Tree {
                     return $onFound($data[$key], $path, $data, $key); // the value
                 } else {
                     return $this->find($data[$key], array_shift($next), $path, $next, $onFound, $onNotFound); // next step
+                }
+            } else {
+                if ($next) {
+                    //If need to search deeper, but it's not array, then stop nested search recursion
+                    return $onNotFound(array_merge($path, $next));
                 }
             }
 
